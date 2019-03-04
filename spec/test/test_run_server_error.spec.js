@@ -30,9 +30,14 @@ const ImptTestHelper = require('../ImptTestHelper');
 const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 describe('impt test run for test server error scenario >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(ImptTestCommandsHelper.createTestProductAndDG).
             then(done).
             catch(error => done.fail(error));
@@ -40,6 +45,10 @@ describe('impt test run for test server error scenario >', () => {
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
@@ -49,10 +58,10 @@ describe('impt test run for test server error scenario >', () => {
         ImptTestCommandsHelper.createTestConfig(
             'fixtures/server_error',
             {
-                'device-file' : 'myDevice.class.nut',
-                'agent-file' : 'myAgent.class.nut',
+                'device-file': 'myDevice.class.nut',
+                'agent-file': 'myAgent.class.nut',
                 'timeout': 40,
-                'test-file' : [
+                'test-file': [
                     'tests/server-error.agent.nut',
                     'tests/server-error2.agent.nut',
                     'tests/server-error.device.nut',
@@ -73,9 +82,9 @@ describe('impt test run for test server error scenario >', () => {
         ImptTestCommandsHelper.createTestConfig(
             'fixtures/server_error',
             {
-                'agent-file' : 'myAgent.class.nut',
+                'agent-file': 'myAgent.class.nut',
                 'timeout': 40,
-                'test-file' : 'tests/server-index-access-failure.agent.nut'
+                'test-file': 'tests/server-index-access-failure.agent.nut'
             }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();
@@ -91,9 +100,9 @@ describe('impt test run for test server error scenario >', () => {
         ImptTestCommandsHelper.createTestConfig(
             'fixtures/server_error',
             {
-                'agent-file' : 'myAgent.class.nut',
+                'agent-file': 'myAgent.class.nut',
                 'timeout': 40,
-                'test-file' : 'tests/server-throw-exception.agent.nut'
+                'test-file': 'tests/server-throw-exception.agent.nut'
             }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();

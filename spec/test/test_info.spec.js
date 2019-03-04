@@ -40,6 +40,7 @@ describe(`impt test info tests (output: ${outputMode ? outputMode : 'default'}) 
     let old_name = null;
     let device_name = null;
     let agent_id = null;
+    let saved_dg_id = null;
 
     beforeAll((done) => {
         ImptTestHelper.init().
@@ -55,15 +56,18 @@ describe(`impt test info tests (output: ${outputMode ? outputMode : 'default'}) 
 
     // prepare test environment for impt test create test
     function _testSuiteInit() {
-        return ImptTestHelper.getDeviceAttrs(ImptTestCommandsHelper.TEST_PRODUCT_NAME, ImptTestCommandsHelper.TEST_DG_NAME, (commandOut) => {
-            if (commandOut && commandOut.mac) {
-                device_mac = commandOut.mac;
-                old_name = commandOut.name;
-                device_name = `${config.devices[config.deviceidx]}${config.suffix}`;
-                agent_id = commandOut.agentid;
-            }
-            else fail("TestSuitInit error: Failed to get additional device attributes");
+        return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+            saved_dg_id = output && output.dg ? output.dg : null;
         }).
+            then(() => ImptTestHelper.getDeviceAttrs(ImptTestCommandsHelper.TEST_PRODUCT_NAME, ImptTestCommandsHelper.TEST_DG_NAME, (commandOut) => {
+                if (commandOut && commandOut.mac) {
+                    device_mac = commandOut.mac;
+                    old_name = commandOut.name;
+                    device_name = `${config.devices[config.deviceidx]}${config.suffix}`;
+                    agent_id = commandOut.agentid;
+                }
+                else fail("TestSuitInit error: Failed to get additional device attributes");
+            })).
             then(() => ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name ${device_name}`, ImptTestHelper.emptyCheck)).
             then(() => ImptTestCommandsHelper.createTestProductAndDG((commandOut) => {
                 if (commandOut && commandOut.dgId && commandOut.productId) {
@@ -77,7 +81,11 @@ describe(`impt test info tests (output: ${outputMode ? outputMode : 'default'}) 
     }
 
     function _testSuiteCleanup() {
-        return ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name ${old_name ? old_name : '""'}`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name ${old_name ? old_name : '""'}`, ImptTestHelper.emptyCheck).
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            });
     }
 
     describe(`test info positive tests >`, () => {

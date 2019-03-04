@@ -33,8 +33,6 @@ const ImptTestHelper = require('../ImptTestHelper');
 const TEST_PRODUCT_NAME = `__impt_test_run_product${config.suffix}`;
 const TEST_DG_NAME = `__impt_test_run_dg${config.suffix}`;
 
-let saved_dg_id = null;
-
 // Helper class for 'impt test' commands testing.
 // Contains common methods for impt test commands execution:
 // creating test Product and DG, creating test config, check test run status
@@ -45,14 +43,6 @@ class ImptTestCommandsHelper {
 
     static get TEST_DG_NAME() {
         return TEST_DG_NAME;
-    }
-
-    static get SRC_DG_NAME() {
-        return saved_dg_id;
-    }
-
-    static set SRC_DG_NAME(value) {
-        saved_dg_id = value;
     }
 
     // Creates test Product and DG, copies test files to the tests execution folder,
@@ -69,20 +59,17 @@ class ImptTestCommandsHelper {
         let product_id = null;
         let dg_id = null;
 
-        return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
-            ImptTestCommandsHelper.SRC_DG_NAME = output && output.dg ? output.dg : null;
-        }).
-            then(() => ImptTestHelper.runCommand(`impt product create --name ${TEST_PRODUCT_NAME}`, (commandOut) => {
+        return ImptTestHelper.runCommand(`impt product create --name ${TEST_PRODUCT_NAME}`, (commandOut) => {
                 product_id = ImptTestHelper.parseId(commandOut);
                 ImptTestHelper.checkSuccessStatus(commandOut)
-            })).
+            }).
             then(() => ImptTestHelper.runCommand(`impt dg create --name ${TEST_DG_NAME} --product ${TEST_PRODUCT_NAME}`, (commandOut) => {
                 dg_id = ImptTestHelper.parseId(commandOut);
                 ImptTestHelper.checkSuccessStatus(commandOut)
             })).
             then(() => ImptTestHelper.runCommand(
                 `impt device assign --device ${config.devices[config.deviceidx]} --dg ${TEST_DG_NAME} --confirmed`, ImptTestHelper.checkSuccessStatus)).
-            then(() => Promise.resolve({ productId: product_id, dgId: dg_id, srcDgId: saved_dg_id })).
+            then(() => Promise.resolve({ productId: product_id, dgId: dg_id })).
             then(output);
     }
 
@@ -109,12 +96,7 @@ class ImptTestCommandsHelper {
     static cleanUpTestEnvironment() {
         return ImptTestHelper.runCommand(
             `impt product delete --product ${TEST_PRODUCT_NAME} --builds --force --confirmed`,
-            ImptTestHelper.emptyCheck).
-            then(() => {
-                if (ImptTestCommandsHelper.SRC_DG_NAME) {
-                    return ImptTestHelper.deviceAssign(ImptTestCommandsHelper.SRC_DG_NAME);
-                }
-            });
+            ImptTestHelper.emptyCheck);
     }
 
     // Checks success status of 'impt test run' command

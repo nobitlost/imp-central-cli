@@ -29,18 +29,27 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Tests for Bi-directional Device-Agent Communication
 describe('impt test run for Agent code and device code together scenario >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(() => ImptTestCommandsHelper.createTestEnvironment(
                 'fixtures/agent_with_partner_code',
-                {'test-file' : 'tests/tmp.agent.*.nut'})).
+                { 'test-file': 'tests/tmp.agent.*.nut' })).
             then(done).
             catch(error => done.fail(error));
     }, ImptTestHelper.TIMEOUT);
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
@@ -48,12 +57,12 @@ describe('impt test run for Agent code and device code together scenario >', () 
 
     it('run test', (done) => {
         ImptTestHelper.runCommand('impt test run --tests :MyTestCase::testMe_1', (commandOut) => {
-                expect(commandOut.output).not.toBeEmptyString();
-                expect(commandOut.output).not.toMatch(/MyTestCase::testMe\(\)\n/);
-                expect(commandOut.output).toMatch(/MyTestCase::testMe_1\(\)\n/);
-                ImptTestHelper.checkSuccessStatus(commandOut);
-                ImptTestHelper.checkSuccessStatus(commandOut);
-            }).
+            expect(commandOut.output).not.toBeEmptyString();
+            expect(commandOut.output).not.toMatch(/MyTestCase::testMe\(\)\n/);
+            expect(commandOut.output).toMatch(/MyTestCase::testMe_1\(\)\n/);
+            ImptTestHelper.checkSuccessStatus(commandOut);
+            ImptTestHelper.checkSuccessStatus(commandOut);
+        }).
             then(done).
             catch(error => done.fail(error));
     });

@@ -31,9 +31,14 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Agent-only tests
 describe('impt test run for agent-only scenario >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(() => ImptTestCommandsHelper.createTestEnvironment(
                 'fixtures/agent_only',
                 { 'agent-file': 'agent.nut', 'test-file': 'tests/agent.test.nut' })).
@@ -43,6 +48,10 @@ describe('impt test run for agent-only scenario >', () => {
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));

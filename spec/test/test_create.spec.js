@@ -34,6 +34,7 @@ const UserInterractor = require('../../lib/util/UserInteractor');
 ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
     describe(`impt test create tests (output: ${outputMode ? outputMode : 'default'}) >`, () => {
         let dg_id = null;
+        let saved_dg_id = null;
 
         beforeAll((done) => {
             ImptTestHelper.init().
@@ -45,6 +46,10 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         afterAll((done) => {
             ImptTestCommandsHelper.cleanUpTestEnvironment().
+                then(() => {
+                    if (saved_dg_id)
+                        return ImptTestHelper.deviceAssign(saved_dg_id);
+                }).
                 then(ImptTestHelper.cleanUp).
                 then(done).
                 catch(error => done.fail(error));
@@ -52,12 +57,15 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // prepare test environment for impt test create test
         function _testSuiteInit() {
-            return ImptTestCommandsHelper.createTestProductAndDG((commandOut) => {
-                if (commandOut && commandOut.dgId) {
-                    dg_id = commandOut.dgId;
-                }
-                else fail('TestSuiteInit error: Failed to get product and dg ids');
+            return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
             }).
+                then(() => ImptTestCommandsHelper.createTestProductAndDG((commandOut) => {
+                    if (commandOut && commandOut.dgId) {
+                        dg_id = commandOut.dgId;
+                    }
+                    else fail('TestSuiteInit error: Failed to get product and dg ids');
+                })).
                 then(() => ImptTestHelper.checkDeviceStatus(config.devices[config.deviceidx])).
                 then(() => ImptTestCommandsHelper.copyFiles('fixtures/create'));
         }

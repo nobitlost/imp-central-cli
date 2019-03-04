@@ -32,16 +32,25 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Test for error-before-start behavior
 describe('impt test run for error-before-start behavior >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
-            then(() => ImptTestCommandsHelper.createTestEnvironment('fixtures/error_before_start', {'device-file' : 'device.nut'})).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
+            then(() => ImptTestCommandsHelper.createTestEnvironment('fixtures/error_before_start', { 'device-file': 'device.nut' })).
             then(done).
             catch(error => done.fail(error));
     }, ImptTestHelper.TIMEOUT);
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
@@ -49,13 +58,13 @@ describe('impt test run for error-before-start behavior >', () => {
 
     it('run test', (done) => {
         ImptTestHelper.runCommand('impt test run', (commandOut) => {
-                expect(commandOut.output).not.toBeEmptyString();
-                expect(commandOut.output).toMatch(/warning\] Device is out of memory/);
-                expect(commandOut.output).toMatch(/error\] Session startup timeout/);
-                expect(commandOut.output).not.toMatch(/test\] Device is out of memory/);
-                ImptTestCommandsHelper.checkTestFailStatus(commandOut);
-                ImptTestHelper.checkFailStatus(commandOut);
-            }).
+            expect(commandOut.output).not.toBeEmptyString();
+            expect(commandOut.output).toMatch(/warning\] Device is out of memory/);
+            expect(commandOut.output).toMatch(/error\] Session startup timeout/);
+            expect(commandOut.output).not.toMatch(/test\] Device is out of memory/);
+            ImptTestCommandsHelper.checkTestFailStatus(commandOut);
+            ImptTestHelper.checkFailStatus(commandOut);
+        }).
             then(done).
             catch(error => done.fail(error));
     });

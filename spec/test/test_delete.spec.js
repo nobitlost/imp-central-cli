@@ -36,6 +36,7 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
     describe(`impt test delete tests (output: ${outputMode ? outputMode : 'default'}) >`, () => {
         let dg_id = null;
         let product_id = null;
+        let saved_dg_id = null;
 
         beforeAll((done) => {
             ImptTestHelper.init().
@@ -59,19 +60,26 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         afterEach((done) => {
             ImptTestCommandsHelper.cleanUpTestEnvironment().
+                then(() => {
+                    if (saved_dg_id)
+                        return ImptTestHelper.deviceAssign(saved_dg_id);
+                }).
                 then(done).
                 catch(error => done.fail(error));
         }, ImptTestHelper.TIMEOUT);
 
         // prepare test environment for impt test delete test
         function _testInit() {
-            return ImptTestCommandsHelper.createTestProductAndDG((commandOut) => {
-                if (commandOut && commandOut.dgId) {
-                    dg_id = commandOut.dgId;
-                    product_id = commandOut.productId;
-                }
-                else fail('TestInit error: Failed to get product and dg ids');
+            return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
             }).
+                then(() => ImptTestCommandsHelper.createTestProductAndDG((commandOut) => {
+                    if (commandOut && commandOut.dgId) {
+                        dg_id = commandOut.dgId;
+                        product_id = commandOut.productId;
+                    }
+                    else fail('TestInit error: Failed to get product and dg ids');
+                })).
                 then(() => ImptTestCommandsHelper.copyFiles('fixtures/create')).
                 then(() => ImptTestHelper.runCommand(`impt test create --dg ${dg_id} -e -i github.impt -j builder.impt -q ${outputMode}`, ImptTestHelper.emptyCheck));
         }

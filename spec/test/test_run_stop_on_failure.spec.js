@@ -31,9 +31,14 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Tests for stop-on-faulire behavior
 describe('impt test run for stop-on-failure behavior >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(ImptTestCommandsHelper.createTestProductAndDG).
             then(done).
             catch(error => done.fail(error));
@@ -41,13 +46,17 @@ describe('impt test run for stop-on-failure behavior >', () => {
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
     }, ImptTestHelper.TIMEOUT);
 
     it('run test with stop-on-fail=true', (done) => {
-        ImptTestCommandsHelper.createTestConfig('fixtures/stop_on_failure', { 'stop-on-fail' : true }).
+        ImptTestCommandsHelper.createTestConfig('fixtures/stop_on_failure', { 'stop-on-fail': true }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();
                 expect(commandOut.output).not.toMatch(/Using device test file "tests\/2\.device\.test\.nut"/);
@@ -59,7 +68,7 @@ describe('impt test run for stop-on-failure behavior >', () => {
     });
 
     it('run test with stop-on-fail=false', (done) => {
-        ImptTestCommandsHelper.createTestConfig('fixtures/stop_on_failure', { 'stop-on-fail' : false }).
+        ImptTestCommandsHelper.createTestConfig('fixtures/stop_on_failure', { 'stop-on-fail': false }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();
                 expect(commandOut.output).toMatch(/Using device test file "tests\/2\.device\.test\.nut"/);
