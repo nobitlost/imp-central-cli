@@ -43,6 +43,7 @@ describe(`impt device list test suite (output: ${outputMode ? outputMode : 'defa
     let product2_id = null;
     let dg_id = null;
     let dg2_id = null;
+    let saved_dg_id = null;
 
     beforeAll((done) => {
         ImptTestHelper.init().
@@ -102,11 +103,14 @@ describe(`impt device list test suite (output: ${outputMode ? outputMode : 'defa
 
     // prepare environment for device list command test suite 
     function _testSuiteInit() {
-        return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, (commandOut) => {
-            product_id = ImptTestHelper.parseId(commandOut);
-            if (!product_id) fail("TestSuitInit error: Failed to create product");
-            ImptTestHelper.emptyCheck(commandOut);
+        return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+            saved_dg_id = output && output.dg ? output.dg : null;
         }).
+            then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, (commandOut) => {
+                product_id = ImptTestHelper.parseId(commandOut);
+                if (!product_id) fail("TestSuitInit error: Failed to create product");
+                ImptTestHelper.emptyCheck(commandOut);
+            })).
             then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME_2}`, (commandOut) => {
                 product2_id = ImptTestHelper.parseId(commandOut);
                 if (!product2_id) fail("TestSuitInit error: Failed to create product");
@@ -124,11 +128,16 @@ describe(`impt device list test suite (output: ${outputMode ? outputMode : 'defa
             })).
             then(() => ImptTestHelper.deviceAssign(DEVICE_GROUP_NAME));
     }
-    
+
     // delete all entities using in impt device list test suite
     function _testSuiteCleanUp() {
         return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -q`, ImptTestHelper.emptyCheck).
-            then(() => ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME_2} -f -q`, ImptTestHelper.emptyCheck));
+            then(() => ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME_2} -f -q`, ImptTestHelper.emptyCheck)).
+            then(() => {
+                if (saved_dg_id) {
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+                }
+            });
     }
 
     describe('impt device list positive  tests >', () => {

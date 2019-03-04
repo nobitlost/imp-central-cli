@@ -48,6 +48,7 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
     describe(`impt build run test suite (output: ${outputMode ? outputMode : 'default'}) >`, () => {
         let dg_id = null;
         let build_id = null;
+        let saved_dg_id = null;
 
         beforeAll((done) => {
             ImptTestHelper.init().
@@ -64,7 +65,10 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // prepare environment for build run command testing
         function _testSuiteInit() {
-            return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck).
+            return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            }).
+                then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck)).
                 then(() => ImptTestHelper.runCommand(`impt dg create -n ${DEVICE_GROUP_NAME} -p ${PRODUCT_NAME}`, (commandOut) => {
                     dg_id = ImptTestHelper.parseId(commandOut);
                     if (!dg_id) fail("TestSuitInit error: Failed to create device group");
@@ -77,7 +81,12 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // delete all entities using in impt build run test suite
         function _testSuiteCleanUp() {
-            return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck);
+            return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck).
+                then(() => {
+                    if (saved_dg_id) {
+                        return ImptTestHelper.deviceAssign(saved_dg_id);
+                    }
+                });
         }
 
         // check 'deployment successfully created' output message 

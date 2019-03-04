@@ -161,6 +161,28 @@ class ImptTestHelper {
         });
     }
 
+
+    static getDeviceGroupOfAssignedDevice(output) {
+        let jsonInfo = null;
+        return ImptTestHelper.runCommand(`impt device list -a -z json`, (commandOut) => {
+            jsonInfo = commandOut.output;
+        }).
+            then(() => {
+                return new Promise((resolve) => {
+                    let _json = JSON.parse(jsonInfo);
+                    // find device with specified ID
+                    let _items = _json.filter((value) => {
+                        return value.Device.id === config.devices[config.deviceidx];
+                    });
+                    if (_items.length && _items[0].Device["Device Group"])
+                        resolve({ dg: _items[0].Device["Device Group"].id });
+                    else
+                        resolve(null);
+                })
+            }).
+            then(output);
+    }
+
     static getDeviceAttrs(product, dg, output) {
         let jsonInfo = null;
         return ImptTestHelper.runCommand(`impt product create -n ${product}`, ImptTestHelper.emptyCheck).
@@ -272,7 +294,7 @@ class ImptTestHelper {
 
     // Checks if the command output contains the specified attribute name and value
     static checkAttribute(commandOut, attrName, attrValue) {
-        expect(commandOut.output).toMatch(new RegExp(`${attrName}"?:\\s+"?${attrValue.replace(new RegExp(/([\^\[\.\$\{\*\(\\\+\)\|\?\<\>])/g),'\\$&').replace(new RegExp(/"/g), '\\\\?"')}"?`));
+        expect(commandOut.output).toMatch(new RegExp(`${attrName}"?:\\s+"?${attrValue.replace(new RegExp(/([\^\[\.\$\{\*\(\\\+\)\|\?\<\>])/g), '\\$&').replace(new RegExp(/"/g), '\\\\?"')}"?`));
     }
 
     // Checks if the command output contains the specified message for default or debug output mode

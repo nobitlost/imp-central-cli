@@ -42,6 +42,7 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
         let build_id = null;
         let build2_id = null;
         let build3_id = null;
+        let saved_dg_id = null;
 
         // custom matcher for search flagged and  not flagged deployments
         let customMatcher = {
@@ -98,7 +99,10 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // prepare environment for device group builds command testing
         function _testSuiteInit() {
-            return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck).
+            return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            }).
+                then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck)).
                 then(() => ImptTestHelper.runCommand(`impt dg create -n ${DEVICE_GROUP_NAME} -s "${DEVICE_GROUP_DESCR}" -p ${PRODUCT_NAME}`, (commandOut) => {
                     dg_id = ImptTestHelper.parseId(commandOut);
                     if (!dg_id) fail("TestSuitInit error: Failed to create device group");
@@ -109,7 +113,12 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // delete all entities using in impt dg builds test suite
         function _testSuiteCleanUp() {
-            return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck);
+            return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck).
+                then(() => {
+                    if (saved_dg_id) {
+                        return ImptTestHelper.deviceAssign(saved_dg_id);
+                    }
+                });
         }
 
         function _testInit() {
