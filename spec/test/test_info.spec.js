@@ -81,7 +81,7 @@ describe(`impt test info tests (output: ${outputMode ? outputMode : 'default'}) 
     }
 
     function _testSuiteCleanup() {
-        return ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name ${old_name ? old_name : '""'}`, ImptTestHelper.emptyCheck).
+        return ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name "${old_name ? old_name : ''}"`, ImptTestHelper.emptyCheck).
             then(() => {
                 if (saved_dg_id)
                     return ImptTestHelper.deviceAssign(saved_dg_id);

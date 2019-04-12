@@ -86,7 +86,7 @@ describe(`impt device restart test suite (output: ${outputMode ? outputMode : 'd
     // delete all entities using in impt device restart test suite
     function _testSuiteCleanUp() {
         return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -q`, ImptTestHelper.emptyCheck).
-            then(() => ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name ${old_name ? old_name : '""'}`, ImptTestHelper.emptyCheck)).
+            then(() => ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name "${old_name ? old_name : ''}"`, ImptTestHelper.emptyCheck)).
             then(() => {
                 if (saved_dg_id) {
                     return ImptTestHelper.deviceAssign(saved_dg_id);
