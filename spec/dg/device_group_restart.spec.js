@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright 2018 Electric Imp
+// Copyright 2018-2019 Electric Imp
 //
 // SPDX-License-Identifier: MIT
 //
@@ -43,6 +43,7 @@ const outputMode = '';
 
 describe(`impt device group restart test suite (output: ${outputMode ? outputMode : 'default'}) >`, () => {
     let dg_id = null;
+    let saved_dg_id = null;
 
     beforeAll((done) => {
         ImptTestHelper.init().
@@ -61,7 +62,10 @@ describe(`impt device group restart test suite (output: ${outputMode ? outputMod
 
     // prepare environment for device group restart command testing
     function _testSuiteInit() {
-        return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck).
+        return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+            saved_dg_id = output && output.dg ? output.dg : null;
+        }).
+            then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck)).
             then(() => ImptTestHelper.runCommand(`impt dg create -n ${DEVICE_GROUP_NAME} -s "${DEVICE_GROUP_DESCR}" -p ${PRODUCT_NAME}`, (commandOut) => {
                 dg_id = ImptTestHelper.parseId(commandOut);
                 if (!dg_id) fail("TestSuitInit error: Failed to create device group");
@@ -71,7 +75,12 @@ describe(`impt device group restart test suite (output: ${outputMode ? outputMod
 
     // delete all entities using in impt dg restart test suite
     function _testSuiteCleanUp() {
-        return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -q`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -q`, ImptTestHelper.emptyCheck).
+            then(() => {
+                if (saved_dg_id) {
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+                }
+            });
     }
 
     // check 'device group successfully restarted' output message 

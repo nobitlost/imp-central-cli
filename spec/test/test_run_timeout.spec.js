@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright 2018 Electric Imp
+// Copyright 2018-2019 Electric Imp
 //
 // SPDX-License-Identifier: MIT
 //
@@ -31,9 +31,14 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Tests for timeout behavior
 describe('impt test run for timeout behavior >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(ImptTestCommandsHelper.createTestProductAndDG).
             then(done).
             catch(error => done.fail(error));
@@ -41,13 +46,17 @@ describe('impt test run for timeout behavior >', () => {
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
     }, ImptTestHelper.TIMEOUT);
 
     it('run test with too small timeout', (done) => {
-        ImptTestCommandsHelper.createTestConfig('fixtures/timeout', { 'timeout' : 3 }).
+        ImptTestCommandsHelper.createTestConfig('fixtures/timeout', { 'timeout': 3 }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();
                 expect(commandOut.output).toMatch('Test timed out');
@@ -60,7 +69,7 @@ describe('impt test run for timeout behavior >', () => {
 
     // checks that timeout is applied to every test method, not to the whole session
     it('run test with appropriate timeout', (done) => {
-        ImptTestCommandsHelper.createTestConfig('fixtures/timeout', { 'timeout' : 10 }).
+        ImptTestCommandsHelper.createTestConfig('fixtures/timeout', { 'timeout': 10 }).
             then(() => ImptTestHelper.runCommand('impt test run', (commandOut) => {
                 expect(commandOut.output).not.toBeEmptyString();
                 ImptTestCommandsHelper.checkTestSuccessStatus(commandOut);

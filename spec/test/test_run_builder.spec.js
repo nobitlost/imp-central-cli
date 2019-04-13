@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright 2018 Electric Imp
+// Copyright 2018-2019 Electric Imp
 //
 // SPDX-License-Identifier: MIT
 //
@@ -31,16 +31,21 @@ const ImptTestCommandsHelper = require('./ImptTestCommandsHelper');
 
 // Builder syntax tests
 describe('impt test run for Builder syntax scenario >', () => {
+    let saved_dg_id = null;
+
     beforeAll((done) => {
         ImptTestHelper.init().
             then(ImptTestCommandsHelper.cleanUpTestEnvironment).
+            then(() => ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            })).
             then(() => ImptTestCommandsHelper.createTestEnvironment(
                 'fixtures/builder',
                 {
-                    'device-file' : 'myDevice.class.nut',
-                    'agent-file' : 'myAgent.class.nut',
+                    'device-file': 'myDevice.class.nut',
+                    'agent-file': 'myAgent.class.nut',
                     'timeout': 40,
-                    'test-file' : 'tests/builder.agent.nut'
+                    'test-file': 'tests/builder.agent.nut'
                 })).
             then(done).
             catch(error => done.fail(error));
@@ -48,6 +53,10 @@ describe('impt test run for Builder syntax scenario >', () => {
 
     afterAll((done) => {
         ImptTestCommandsHelper.cleanUpTestEnvironment().
+            then(() => {
+                if (saved_dg_id)
+                    return ImptTestHelper.deviceAssign(saved_dg_id);
+            }).
             then(() => ImptTestHelper.cleanUp()).
             then(done).
             catch(error => done.fail(error));
@@ -55,10 +64,10 @@ describe('impt test run for Builder syntax scenario >', () => {
 
     it('run test', (done) => {
         ImptTestHelper.runCommand('impt test run', (commandOut) => {
-                expect(commandOut.output).not.toBeEmptyString();
-                ImptTestCommandsHelper.checkTestSuccessStatus(commandOut);
-                ImptTestHelper.checkSuccessStatus(commandOut);
-            }).
+            expect(commandOut.output).not.toBeEmptyString();
+            ImptTestCommandsHelper.checkTestSuccessStatus(commandOut);
+            ImptTestHelper.checkSuccessStatus(commandOut);
+        }).
             then(done).
             catch(error => done.fail(error));
     });

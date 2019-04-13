@@ -58,10 +58,11 @@ class ImptTestCommandsHelper {
     static createTestProductAndDG(output) {
         let product_id = null;
         let dg_id = null;
+
         return ImptTestHelper.runCommand(`impt product create --name ${TEST_PRODUCT_NAME}`, (commandOut) => {
-            product_id = ImptTestHelper.parseId(commandOut);
-            ImptTestHelper.checkSuccessStatus(commandOut)
-        }).
+                product_id = ImptTestHelper.parseId(commandOut);
+                ImptTestHelper.checkSuccessStatus(commandOut)
+            }).
             then(() => ImptTestHelper.runCommand(`impt dg create --name ${TEST_DG_NAME} --product ${TEST_PRODUCT_NAME}`, (commandOut) => {
                 dg_id = ImptTestHelper.parseId(commandOut);
                 ImptTestHelper.checkSuccessStatus(commandOut)

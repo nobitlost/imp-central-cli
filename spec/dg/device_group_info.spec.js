@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright 2018 Electric Imp
+// Copyright 2018-2019 Electric Imp
 //
 // SPDX-License-Identifier: MIT
 //
@@ -41,6 +41,7 @@ describe(`impt device group info test suite (output: ${outputMode ? outputMode :
     let product_id = null;
     let email = null;
     let userid = null;
+    let saved_dg_id = null;
 
     beforeAll((done) => {
         ImptTestHelper.init().
@@ -59,11 +60,14 @@ describe(`impt device group info test suite (output: ${outputMode ? outputMode :
 
     // prepare environment for device group info command testing
     function _testSuiteInit() {
-        return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, (commandOut) => {
-            product_id = ImptTestHelper.parseId(commandOut);
-            if (!product_id) fail("TestSuitInit error: Failed to create product");
-            ImptTestHelper.emptyCheck(commandOut);
+        return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+            saved_dg_id = output && output.dg ? output.dg : null;
         }).
+            then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, (commandOut) => {
+                product_id = ImptTestHelper.parseId(commandOut);
+                if (!product_id) fail("TestSuitInit error: Failed to create product");
+                ImptTestHelper.emptyCheck(commandOut);
+            })).
             then(() => ImptTestHelper.runCommand(`impt dg create -n ${DEVICE_GROUP_NAME} -p ${PRODUCT_NAME}`, (commandOut) => {
                 dg_id = ImptTestHelper.parseId(commandOut);
                 if (!dg_id) fail("TestSuitInit error: Failed to create device group");
@@ -82,7 +86,12 @@ describe(`impt device group info test suite (output: ${outputMode ? outputMode :
 
     // delete all entities using in impt dg info test suite
     function _testSuiteCleanUp() {
-        return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -b -q`, ImptTestHelper.emptyCheck).
+        then(() => {
+            if (saved_dg_id) {
+                return ImptTestHelper.deviceAssign(saved_dg_id);
+            }
+        });
     }
 
     // check base atributes of requested device group

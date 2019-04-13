@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright 2018 Electric Imp
+// Copyright 2018-2019 Electric Imp
 //
 // SPDX-License-Identifier: MIT
 //
@@ -44,6 +44,7 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
     describe(`impt device group reassign test suite (output: ${outputMode ? outputMode : 'default'}) >`, () => {
         let dg_id = null;
         let dg_dst_id = null;
+        let saved_dg_id = null;
 
         beforeAll((done) => {
             ImptTestHelper.init().
@@ -62,7 +63,10 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
 
         // prepare environment for device group reassign command testing
         function _testSuiteInit() {
-            return ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck).
+            return ImptTestHelper.getDeviceGroupOfAssignedDevice((output) => {
+                saved_dg_id = output && output.dg ? output.dg : null;
+            }).
+                then(() => ImptTestHelper.runCommand(`impt product create -n ${PRODUCT_NAME}`, ImptTestHelper.emptyCheck)).
                 then(() => ImptTestHelper.runCommand(`impt dg create -n ${DEVICE_GROUP_NAME} -p ${PRODUCT_NAME}`, (commandOut) => {
                     dg_id = ImptTestHelper.parseId(commandOut);
                     if (!dg_id) fail("TestSuitInit error: Failed to create device group");
@@ -79,7 +83,12 @@ ImptTestHelper.OUTPUT_MODES.forEach((outputMode) => {
         // delete all entities using in impt dg reassign test suite
         function _testSuiteCleanUp() {
             return ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_NAME} -f -q`, ImptTestHelper.emptyCheck).
-                then(() => ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_DST_NAME} -f -q`, ImptTestHelper.emptyCheck));
+                then(() => ImptTestHelper.runCommand(`impt product delete -p ${PRODUCT_DST_NAME} -f -q`, ImptTestHelper.emptyCheck)).
+                then(() => {
+                    if (saved_dg_id) {
+                        return ImptTestHelper.deviceAssign(saved_dg_id);
+                    }
+                });
         }
 
         // check 'device successfully reassigned' output message 
