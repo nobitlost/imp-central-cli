@@ -256,7 +256,7 @@ class ImptTestHelper {
     }
 
     static projectCreate(dg, dfile = 'device.nut', afile = 'agent.nut') {
-        return ImptTestHelper.runCommand(`impt project link -g ${dg} -x ${dfile}  -y ${afile} -q`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt project link -g "${dg}" -x "${dfile}"  -y "${afile}" -q`, ImptTestHelper.emptyCheck);
     }
 
     static projectDelete() {
@@ -264,7 +264,7 @@ class ImptTestHelper {
     }
 
     static deviceAssign(dg) {
-        return ImptTestHelper.runCommand(`impt device assign -d ${config.devices[config.deviceidx]} -g ${dg} -q`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt device assign -d ${config.devices[config.deviceidx]} -g "${dg}" -q`, ImptTestHelper.emptyCheck);
     }
 
     static deviceRestart() {
@@ -272,7 +272,7 @@ class ImptTestHelper {
     }
 
     static deviceUnassign(dg) {
-        return ImptTestHelper.runCommand(`impt dg unassign -g ${dg}`, ImptTestHelper.emptyCheck);
+        return ImptTestHelper.runCommand(`impt dg unassign -g "${dg}"`, ImptTestHelper.emptyCheck);
     }
 
     // Checks success return code of the command
