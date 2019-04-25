@@ -24,7 +24,7 @@
 
 class DeviceTestCase extends ImpTestCase {
     function setUp() {
-        local  result = 1 / 0;
+        error();
     }
 
     function testSomething() {
