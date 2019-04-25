@@ -170,7 +170,6 @@ class ImptTestHelper {
                 this.deviceInfo.deviceMac = _json.Device.mac_address;
                 this.deviceInfo.deviceGroup = _json.Device["Device Group"] ? _json.Device["Device Group"].id : null;
                 this.deviceInfo.deviceAgentId = _json.Device.agent_id;
-                console.log(`Save ${this.deviceInfo.originalName} ${this.deviceInfo.deviceGroup}`);
                 ImptTestHelper.emptyCheck(commandOut);
             })).
             then(() => ImptTestHelper.runCommand(`impt device assign -d ${config.devices[config.deviceidx]} -g "${deviceGroup}" -q`, ImptTestHelper.emptyCheck)).
@@ -185,9 +184,7 @@ class ImptTestHelper {
     static restoreDeviceInfo() {
         return ImptTestHelper.runCommand(`impt device update -d ${config.devices[config.deviceidx]} --name "${this.deviceInfo.originalName ? this.deviceInfo.originalName : ''}"`, ImptTestHelper.emptyCheck).
             then(() => {
-                console.log(`Restore name ${this.deviceInfo.originalName}`);
                 if (this.deviceInfo.deviceGroup) {
-                    console.log(`Restore dg ${this.deviceInfo.deviceGroup}`);
                     return this.deviceAssign(this.deviceInfo.deviceGroup);
                 } else {
                     return Promise.resolve();
